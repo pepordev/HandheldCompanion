@@ -572,6 +572,36 @@ public class LayoutManager : IManager
                 }
             }
 
+            // Process axis-based shift actions (triggers as shift)
+            for (int a = 0; a < _plannedAxes.Length; a++)
+            {
+                var inFlag = _plannedAxes[a];
+                var actions = _axisPlan[inFlag];
+
+                // Read origin values
+                var xyIn = _axisXY[inFlag];
+                var inY = controllerState.AxisState[xyIn.Y];
+
+                // Prepare InLayout for shift detection
+                var inLayout = AxisLayout.Layouts[inFlag];
+                inLayout.vector.Y = inY;
+
+                for (int i = 0; i < actions.Length; i++)
+                {
+                    var act = actions[i];
+                    if (act.actionType != ActionType.Shift)
+                        continue;
+
+                    // cast once
+                    var sAction = (ShiftActions)act;
+                    // Use motionThreshold to determine if trigger is "pressed" enough for shift
+                    bool triggerPressed = inLayout.vector.Y >= sAction.motionThreshold;
+                    sAction.Execute(ButtonFlags.None, triggerPressed, shiftSlot, delta);
+                    if (sAction.GetValue())
+                        shiftSlot |= sAction.ShiftSlot;
+                }
+            }
+
             // process button-based map
             foreach (ButtonFlags button in ButtonState.AllButtons)
             {

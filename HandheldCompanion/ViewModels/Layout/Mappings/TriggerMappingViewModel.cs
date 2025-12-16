@@ -181,6 +181,37 @@ namespace HandheldCompanion.ViewModels
                 Targets.ReplaceWith(targets);
                 SelectedTarget = matchingTargetVm ?? Targets.First();
             }
+            else if (actionType == ActionType.Shift)
+            {
+                if (Action is null || Action is not ShiftActions)
+                    Action = new ShiftActions(ShiftSlot.ShiftA) { motionThreshold = Gamepad.TriggerThreshold, motionDirection = DeflectionDirection.Up };
+
+                MappingTargetViewModel? matchingTargetVm = null;
+                foreach (ShiftSlot shiftSlot in Enum.GetValues<ShiftSlot>())
+                {
+                    switch (shiftSlot)
+                    {
+                        case ShiftSlot.None:
+                        case ShiftSlot.Any:
+                            continue;
+                    }
+
+                    MappingTargetViewModel mappingTargetVm = new MappingTargetViewModel
+                    {
+                        Tag = shiftSlot,
+                        Content = EnumUtils.GetDescriptionFromEnumValue(shiftSlot)
+                    };
+                    targets.Add(mappingTargetVm);
+
+                    if (shiftSlot == ((ShiftActions)Action).ShiftSlot)
+                        matchingTargetVm = mappingTargetVm;
+                }
+
+                // Update list and selected target
+                Targets.ReplaceWith(targets);
+                // Pick ShiftA if matchingTargetVm is null
+                SelectedTarget = matchingTargetVm ?? Targets.First();
+            }
             else if (actionType == ActionType.Inherit)
             {
                 if (Action is null || Action is not InheritActions)
@@ -215,6 +246,10 @@ namespace HandheldCompanion.ViewModels
 
                 case ActionType.Mouse:
                     ((MouseActions)Action).MouseType = (MouseActionsType)SelectedTarget.Tag;
+                    break;
+
+                case ActionType.Shift:
+                    ((ShiftActions)Action).ShiftSlot = (ShiftSlot)SelectedTarget.Tag;
                     break;
             }
         }
